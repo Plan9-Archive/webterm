@@ -1,0 +1,11 @@
+#!/bin/rc
+
+url=$"*;
+id=`"{ cat /dev/winid }
+{
+echo 'var f=c("iframe");f.src="'^$url^'";f.style.width="100%";f.style.height="100%";var i=c("input");i.style.width="100%";i.value="http://"';
+echo 'i.onkeypress=function(event){if(event.keyCode==13){ f.src=i.value;i.value="http://"; }};'
+echo 'win('^$id^').bg.appendChild(i);win('^$id^').bg.appendChild(f);'
+echo 'oshow('^$id^', false);'
+} >> /dev/js
+label browser

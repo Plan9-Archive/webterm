@@ -1,0 +1,4 @@
+#!/bin/rc
+
+echo 'youtube('^`"{ cat /dev/winid }^','''^$"*^''')' >> /dev/js
+label youtube
