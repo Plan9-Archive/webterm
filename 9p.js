@@ -298,6 +298,25 @@ function mkfile(path, open, read, write, close) {
 	f.nchildren.push(f.children[n]);
 }
 
+function rmfile(path) {
+	var f, n;
+
+	f = lookupfile(path, 0);
+	path = path.split('/');
+	n = path[path.length - 1];
+	if (n == '*') {
+		f.children = {};
+		f.nchildren = [];
+		return;
+	}
+	f.children[n] = undefined;
+	for (var i = 0; i < f.nchildren.length; i++) {
+		if (f.nchildren[i].name == n) {
+			f.nchildren.splice(i, 1);
+		}
+	}
+}
+
 function respond(p, n) {
 	tagflush[p.tag] = undefined;
 	switch(p.type){

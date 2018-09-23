@@ -1,3 +1,4 @@
 #!/bin/rc
 
+echo -n $"* >> /dev/label
 echo 'image('^`"{ cat /dev/winid }^','''^$"*^''')' >> /dev/js
