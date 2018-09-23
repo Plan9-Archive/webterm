@@ -6,6 +6,7 @@ function startui() {
 	window.dragging = false;
 	window.resizing = false;
 	window.windows = [];
+	window.terminals = {};
 	window.nwindows = 0;
 	window.Nwindows = 0;
 
@@ -73,19 +74,20 @@ function newWindow(id, canclose) {
 	window.Nwindows++;
 
 	div.id = id;
-	div.userList = [];
 	div.setAttribute('class', 'window');
 	div.style.top = (window.nwindows * 10 + 10) + 'px';
 	div.style.left = (window.nwindows * 10 + 10) + 'px';
 	div.style.width = '640px';
 	div.style.height = '480px';
 	div.style.zIndex = window.nwindows;
+	div.termhidden = false;
 
 	div.bg = document.createElement('div');
 	div.bg.setAttribute('class', 'bg');
 
 	div.terminal = newTerminal();
 	div.terminal.div = div;
+	window.terminals[id] = div.terminal;
 
 	div.titleBar = document.createElement('div');
 	div.titleBar.div = div;
@@ -185,7 +187,7 @@ function newWindow(id, canclose) {
 	mkdir("/dev/hsys/" + id);
 	mkfile("/dev/hsys/" + id + "/cons", undefined, function(f, p) { document.getElementById(id).terminal.readterminal(p.count, function(l) {respond(p, l);}, p.tag); }, function(f, p) { document.getElementById(id).terminal.writeterminal(p.data); respond(p, -1); });
 	mkfile("/dev/hsys/" + id + "/consctl", undefined, invalidop, function(f, p) { if(p.data.substr(0, 5) == "rawon") document.getElementById(id).terminal.rawmode = true; if(p.data.substr(0, 5) == "rawoff") document.getElementById(id).terminal.rawmode = false; respond(p, -1); }, function(f) { document.getElementById(id).terminal.rawmode = false; });
-	mkfile("/dev/hsys/" + id + "/cpunote", undefined, function(f, p) { document.getElementById(id).terminal.onnote.push(function(l) { respond(p, l);}); });
+	mkfile("/dev/hsys/" + id + "/cpunote", undefined, function(f, p) { window.terminals[id].onnote.push(function(l) { respond(p, l);}); });
 	mkfile("/dev/hsys/" + id + "/label", undefined, function(f, p) {
 		var data = '';
 		p.count = 0;
@@ -216,8 +218,12 @@ function newWindow(id, canclose) {
 function closeWindow(id) {
 	var win = document.getElementById(id);
 
-	if (win != null)
+	if (win != null) {
+		win.terminal.note("hangup");
+	//	rmfile("/dev/hsys/" + id + "/*");
+	//	rmfile("/dev/hsys/" + id);
 		document.body.removeChild(win);
+	}
 
 	window.nwindows--;
 }
@@ -241,7 +247,8 @@ function showWindow(id) {
 	var button = document.getElementById(id + 'vis');
 
 	div.style.height = div.oldheight;
-	div.terminal.style.display = 'block';
+	if (div.termhidden == false)
+		div.terminal.style.display = 'block';
 	div.resizeHandle.style.display = 'block';
 	div.bg.style.display = 'block';
 	div.bottom.style.display = 'block';

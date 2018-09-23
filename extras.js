@@ -15,6 +15,7 @@ function oset(id, trans) {
 }
 
 function oshow(id, boo) {
+	win(id).termhidden = !boo;
 	win(id).terminal.style.display = boo? 'block': 'none';
 }
 
