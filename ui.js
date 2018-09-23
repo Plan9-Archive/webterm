@@ -2,6 +2,18 @@ function htmlentities(input) {
 	return input.replace(/\&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function c(tagName) {
+	return document.createElement(tagName);
+}
+
+function win(N) {
+	return document.getElementById(N);
+}
+
+function n(e) {
+	document.body.appendChild(e);
+}
+
 function startui() {
 	window.dragging = false;
 	window.resizing = false;

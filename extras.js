@@ -1,15 +1,3 @@
-function c(tagName) {
-	return document.createElement(tagName);
-}
-
-function win(N) {
-	return document.getElementById(N);
-}
-
-function n(e) {
-	document.body.appendChild(e);
-}
-
 function oset(id, trans) {
 	win(id).terminal.style.opacity = trans;
 }
