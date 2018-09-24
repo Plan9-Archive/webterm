@@ -280,17 +280,28 @@ function lookupfile(path, last) {
 
 function mkdir(path) {
 	var f, n;
-	
-	f = lookupfile(path, 0);
-	path = path.split('/');
-	n = path[path.length - 1];
-	f.children[n] = {name: n, parent: f, children: {}, nchildren: [], qid: {type: QTDIR, ver: 0, path: ++lastqid}};
-	f.nchildren.push(f.children[n]);
+
+	try {
+		f = lookupfile(path, 1);
+		f.children = {};
+		f.nchildren = [];
+	} catch {
+		f = lookupfile(path, 0);
+		path = path.split('/');
+		n = path[path.length - 1];
+		f.children[n] = {name: n, parent: f, children: {}, nchildren: [], qid: {type: QTDIR, ver: 0, path: ++lastqid}};
+		f.nchildren.push(f.children[n]);
+	}
 }
 
 function mkfile(path, open, read, write, close) {
 	var f, n;
-	
+
+	try {
+		f = lookupfile(path, 1);
+		rmfile(path);
+	} catch(err) {
+	}
 	f = lookupfile(path, 0);
 	path = path.split('/');
 	n = path[path.length - 1];
@@ -345,4 +356,4 @@ mkdir("/dev");
 mkfile("/dev/cons", undefined, function(f, p) { document.getElementById('terminal').terminal.readterminal(p.count, function(l) {respond(p, l);}, p.tag); }, function(f, p) { document.getElementById('terminal').terminal.writeterminal(p.data); respond(p, -1); });
 mkfile("/dev/consctl", undefined, invalidop, function(f, p) { if(p.data.substr(0, 5) == "rawon") rawmode = true; if(p.data.substr(0, 5) == "rawoff") rawmode = false; respond(p, -1); }, function(f) { rawmode = false; });
 mkfile("/dev/cpunote", undefined, function(f, p) { document.getElementById('terminal').terminal.onnote.push(function(l) { respond(p, l);}); });
-mkfile("/dev/js", function(f, p){ f.text = ""; }, undefined, function(f, p) { f.text += p.data; respond(p, -1); }, function(f, p) { eval(f.text); });
+//mkfile("/dev/js", function(f, p){ f.text = ""; }, undefined, function(f, p) { f.text += p.data; respond(p, -1); }, function(f, p) { eval(f.text); });

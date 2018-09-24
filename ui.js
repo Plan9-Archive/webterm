@@ -22,14 +22,6 @@ function startui() {
 	window.nwindows = 0;
 	window.Nwindows = 0;
 
-/*	var button = document.createElement('input');
-	button.type = 'button';
-	button.value = 'New';
-	button.onclick = function () {
-		document.body.appendChild(newWindow('' + window.Nwindows, true));
-	}
-	document.body.appendChild(button);*/
-
 	document.onmousemove = function(event) {
 		if (window.dragging != false) {
 			var x = parseInt(window.dragging.style.left.replace('px', ''));
@@ -64,7 +56,9 @@ function startui() {
 
 	mkdir("/dev/hsys");
 	mkfile("/dev/hsys/new", function(f, p) {
-		f.window = newWindow('' + window.Nwindows, true);
+		var j = Nwindows;
+		//for (j = 0; win(j) != undefined; j++);
+		f.window = newWindow(j, true);
 		document.body.appendChild(f.window);
 	},
 	function(f, p) {
@@ -119,6 +113,14 @@ function newWindow(id, canclose) {
 
 		event.preventDefault();
 		return false;
+	}
+
+	div.onmousedown = function(event) {
+		for (var i = 0; i < window.windows.length; i++)
+			if (window.windows[i].style.zIndex > this.style.zIndex)
+				window.windows[i].style.zIndex--;
+
+		this.style.zIndex = window.nwindows;
 	}
 
 	// avoid that trapping bug by using global not div.titleBar
@@ -197,21 +199,61 @@ function newWindow(id, canclose) {
 	resizeCompute(div);
 
 	mkdir("/dev/hsys/" + id);
-	mkfile("/dev/hsys/" + id + "/cons", undefined, function(f, p) { document.getElementById(id).terminal.readterminal(p.count, function(l) {respond(p, l);}, p.tag); }, function(f, p) { document.getElementById(id).terminal.writeterminal(p.data); respond(p, -1); });
-	mkfile("/dev/hsys/" + id + "/consctl", undefined, invalidop, function(f, p) { if(p.data.substr(0, 5) == "rawon") document.getElementById(id).terminal.rawmode = true; if(p.data.substr(0, 5) == "rawoff") document.getElementById(id).terminal.rawmode = false; respond(p, -1); }, function(f) { document.getElementById(id).terminal.rawmode = false; });
-	mkfile("/dev/hsys/" + id + "/cpunote", undefined, function(f, p) { window.terminals[id].onnote.push(function(l) { respond(p, l);}); });
-	mkfile("/dev/hsys/" + id + "/label", undefined, function(f, p) {
-		var data = '';
-		p.count = 0;
-		if (p.offset == 0) {
-			data = fromutf8(document.getElementById(id).titleBar.getElementsByClassName('name')[0].innerHTML);
-			p.count = data.length;
+	mkfile("/dev/hsys/" + id + "/cons", undefined, function(f, p) {
+		try {
+			win(id).terminal.readterminal(p.count, function(l) {respond(p, l);}, p.tag);
+		} catch(err) {
+			error9p(p.tag, err.message);
 		}
-		respond(p, data);
 	},
 	function(f, p) {
-		document.getElementById(id).titleBar.getElementsByClassName('name')[0].innerHTML = toutf8(p.data);
-		respond(p, -1);
+		try {
+			win(id).terminal.writeterminal(p.data); respond(p, -1);
+		} catch (err) {
+			error9p(p.tag, err.message);
+		}
+	});
+	mkfile("/dev/hsys/" + id + "/consctl", undefined, invalidop, function(f, p) {
+		try {
+			if(p.data.substr(0, 5) == "rawon")
+				win(id).terminal.rawmode = true;
+			if(p.data.substr(0, 6) == "rawoff")
+				win(id).terminal.rawmode = false;
+			respond(p, -1);
+		} catch(err) {
+			error9p(p.tag, err.message);
+		}
+	},
+	function(f) {
+		try {
+			win(id).terminal.rawmode = false;
+		} catch(err) {
+			error9p(p.tag, err.message);
+		}
+	});
+	mkfile("/dev/hsys/" + id + "/cpunote", undefined, function(f, p) {
+		window.terminals[id].onnote.push(function(l) { respond(p, l);});
+	});
+	mkfile("/dev/hsys/" + id + "/label", undefined, function(f, p) {
+		try {
+			var data = '';
+			p.count = 0;
+			if (p.offset == 0) {
+				data = fromutf8(win(id).titleBar.getElementsByClassName('name')[0].innerHTML);
+				p.count = data.length;
+			}
+			respond(p, data);
+		} catch(err) {
+			error9p(p.tag, err.message);
+		}
+	},
+	function(f, p) {
+		try {
+			win(id).titleBar.getElementsByClassName('name')[0].innerHTML = toutf8(p.data);
+			respond(p, -1);
+		} catch (err) {
+			error9p(p.tag, err.message);
+		}
 	});
 	mkfile("/dev/hsys/" + id + "/winid", undefined,
 		function(f, p) {
@@ -241,8 +283,8 @@ function closeWindow(id) {
 }
 
 function hideWindow(id) {
-	var div = document.getElementById(id);
-	var button = document.getElementById(id + 'vis');
+	var div = win(id);
+	var button = win(id + 'vis');
 
 	div.oldheight = div.style.height;
 	div.style.height = '1.2em';
@@ -255,8 +297,8 @@ function hideWindow(id) {
 }
 
 function showWindow(id) {
-	var div = document.getElementById(id);
-	var button = document.getElementById(id + 'vis');
+	var div = win(id);
+	var button = win(id + 'vis');
 
 	div.style.height = div.oldheight;
 	if (div.termhidden == false)

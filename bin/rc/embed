@@ -2,6 +2,6 @@
 
 id=`"{cat /dev/winid}
 {
-echo 'win('^$"id^').bg.innerHTML = "'^$"*^'";'
+echo 'win('^$"id^').bg.innerHTML = '''^$"*^''';'
 echo 'oshow('^$"id^', false);'
 } >> /dev/js

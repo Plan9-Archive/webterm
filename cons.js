@@ -13,17 +13,15 @@ function newTerminal() {
 	ta.setAttribute('readonly', 'readonly');
 	ta.style.width='100%';
 	ta.style.height='100%';
-	ta.onkeypress=function(event) {this.addchar(event.which)};
+	ta.onkeypress=function(event) {this.addchar(event.which);};
 	ta.onkeydown=function(event) {
 		if(event.which == 46){
 			this.addchar(127);
 			return false;
-		}
-		if(event.which >= 65 && event.which <= 91 && event.ctrlKey){
+		} else if(event.which >= 65 && event.which <= 91 && event.ctrlKey){
 			this.addchar(event.which - 64);
 			return false;
-		}
-		if(event.which == 32 || event.which == 9 || event.which == 8 || event.which == 27) {
+		} else if(event.which == 32 || event.which == 9 || event.which == 8 || event.which == 27) {
 			this.addchar(event.which);
 			return false;
 		}
@@ -32,6 +30,7 @@ function newTerminal() {
 		var s = event.clipboardData.getData('text/plain');
 		for (var i = 0; i < s.length; i++)
 			this.addchar(s.charCodeAt(i));
+		return false;
 	}
 
 	ta.consbuf = "";
