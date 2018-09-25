@@ -14,6 +14,47 @@ function n(e) {
 	document.body.appendChild(e);
 }
 
+function oset(id, trans) {
+	win(id).style.opacity = trans;
+}
+
+function oshow(id, boo) {
+	win(id).termhidden = !boo;
+	win(id).terminal.style.display = boo? 'block': 'none';
+}
+
+function onmove(nx, ny) {
+	if (window.dragging != false) {
+		var x = parseInt(window.dragging.style.left.replace('px', ''));
+		var y = parseInt(window.dragging.style.top.replace('px', ''));
+		var d;
+
+		d = (nx - window.dragging.x);
+		x += d;
+		window.dragging.x = nx;
+
+		d = (ny - window.dragging.y);
+		if ((y + d) < 0) {
+			window.dragging = false;
+			return;
+		}
+		y += d;
+		window.dragging.y = ny;
+
+		window.dragging.style.top = y + 'px';
+		window.dragging.style.left = x + 'px';
+	} else if (window.resizing != false) {
+		var dx = nx - window.resizing.x;
+		var dy = ny - window.resizing.y;
+
+		window.resizing.resizeDiv.style.width = (parseInt(window.resizing.resizeDiv.style.width.replace(/px$/, '')) + dx) + 'px';
+		window.resizing.resizeDiv.style.height = (parseInt(window.resizing.resizeDiv.style.height.replace(/px$/, '')) + dy) + 'px';
+
+		window.resizing.x = nx;
+		window.resizing.y = ny;
+	}
+}
+
 function startui() {
 	window.dragging = false;
 	window.resizing = false;
@@ -23,41 +64,17 @@ function startui() {
 	window.Nwindows = 0;
 
 	document.onmousemove = function(event) {
-		if (window.dragging != false) {
-			var x = parseInt(window.dragging.style.left.replace('px', ''));
-			var y = parseInt(window.dragging.style.top.replace('px', ''));
-			var d;
+		onmove(event.screenX, event.screenY);
+	}
 
-			d = (event.screenX - window.dragging.x);
-			x += d;
-			window.dragging.x = event.screenX;
-
-			d = (event.screenY - window.dragging.y);
-			if ((y + d) < 0) {
-				window.dragging = false;
-				return;
-			}
-			y += d;
-			window.dragging.y = event.screenY;
-
-			window.dragging.style.top = y + 'px';
-			window.dragging.style.left = x + 'px';
-		} else if (window.resizing != false) {
-			var dx = event.screenX - window.resizing.x;
-			var dy = event.screenY - window.resizing.y;
-
-			window.resizing.resizeDiv.style.width = (parseInt(window.resizing.resizeDiv.style.width.replace(/px$/, '')) + dx) + 'px';
-			window.resizing.resizeDiv.style.height = (parseInt(window.resizing.resizeDiv.style.height.replace(/px$/, '')) + dy) + 'px';
-
-			window.resizing.x = event.screenX;
-			window.resizing.y = event.screenY;
-		}
+	document.ontouchmove = function(event) {
+		onmove(event.touches[0].screenX, event.touches[0].screenY);
 	}
 
 	mkdir("/dev/hsys");
 	mkfile("/dev/hsys/new", function(f, p) {
-		var j = Nwindows;
-		//for (j = 0; win(j) != undefined; j++);
+		var j;
+		for (j = 0; win(j) != undefined; j++);
 		f.window = newWindow(j, true);
 		document.body.appendChild(f.window);
 	},
@@ -73,6 +90,24 @@ function startui() {
 	
 }
 
+function raiseWindow(id){
+	for (var i = 0; i < window.windows.length; i++)
+		if (window.windows[i].style.zIndex > win(id).style.zIndex)
+			window.windows[i].style.zIndex--;
+
+	win(id).style.zIndex = window.nwindows;
+}
+
+function dragStart(id, x, y) {
+		var div = win(id);
+
+		div.x = x;
+		div.y = y;
+		window.dragging = div;
+
+		raiseWindow(id);
+}
+
 function newWindow(id, canclose) {
 	var div = document.createElement('div');
 	window.windows.push(div);
@@ -86,14 +121,9 @@ function newWindow(id, canclose) {
 	div.style.width = '640px';
 	div.style.height = '480px';
 	div.style.zIndex = window.nwindows;
-	div.termhidden = false;
 
 	div.bg = document.createElement('div');
 	div.bg.setAttribute('class', 'bg');
-
-	div.terminal = newTerminal();
-	div.terminal.div = div;
-	window.terminals[id] = div.terminal;
 
 	div.titleBar = document.createElement('div');
 	div.titleBar.div = div;
@@ -101,26 +131,21 @@ function newWindow(id, canclose) {
 	div.titleBar.innerHTML = '<span class="name">' + unescape(div.id) + '</span>';
 
 	div.titleBar.onmousedown = function(event) {
-		this.div.x = event.screenX;
-		this.div.y = event.screenY;
-		window.dragging = this.div;
+		dragStart(id, event.screenX, event.screenY);
+		
+		event.preventDefault();
+		return false;
+	}
 
-		for (var i = 0; i < window.windows.length; i++)
-			if (window.windows[i].style.zIndex > window.dragging.style.zIndex)
-				window.windows[i].style.zIndex--;
-
-		window.dragging.style.zIndex = window.nwindows;
+	div.titleBar.ontouchstart = function(event) {
+		dragStart(id, event.touches[0].screenX, event.touches[0].screenY);
 
 		event.preventDefault();
 		return false;
 	}
 
 	div.onmousedown = function(event) {
-		for (var i = 0; i < window.windows.length; i++)
-			if (window.windows[i].style.zIndex > this.style.zIndex)
-				window.windows[i].style.zIndex--;
-
-		this.style.zIndex = window.nwindows;
+		raiseWindow(id);
 	}
 
 	// avoid that trapping bug by using global not div.titleBar
@@ -135,6 +160,8 @@ function newWindow(id, canclose) {
 			window.resizing = false;
 		}
 	}
+
+	window.ontouchend = window.onmouseup;
 
 	var link = document.createElement('a');
 	link.href = 'javascript:hideWindow(\'' + escape(id) + '\')';
@@ -191,34 +218,18 @@ function newWindow(id, canclose) {
 	div.bottom.setAttribute('class', 'bottom');
 	div.bottom.appendChild(div.resizeHandle);
 
-	div.appendChild(div.terminal);
-	div.appendChild(div.bg);
-	div.appendChild(div.titleBar);
-	div.appendChild(div.bottom);
+	if (window.terminals[id] == undefined) {
+		div.terminal = newTerminal();
+		window.terminals[id] = div.terminal;
 
-	resizeCompute(div);
-
-	mkdir("/dev/hsys/" + id);
-	mkfile("/dev/hsys/" + id + "/cons", undefined, function(f, p) {
-		try {
-			win(id).terminal.readterminal(p.count, function(l) {respond(p, l);}, p.tag);
-		} catch(err) {
-			error9p(p.tag, err.message);
-		}
-	},
-	function(f, p) {
-		try {
-			win(id).terminal.writeterminal(p.data); respond(p, -1);
-		} catch (err) {
-			error9p(p.tag, err.message);
-		}
-	});
+		mkdir("/dev/hsys/" + id);
+		mkfile("/dev/hsys/" + id + "/cons", undefined, function(f, p) { try { window.terminals[id].readterminal(p.count, function(l) {respond(p, l);}, p.tag); } catch(err) { error9p(p.tag, err.message); } }, function(f, p) { try { window.terminals[id].writeterminal(p.data); respond(p, -1); } catch (err) { error9p(p.tag, err.message); } });
 	mkfile("/dev/hsys/" + id + "/consctl", undefined, invalidop, function(f, p) {
 		try {
 			if(p.data.substr(0, 5) == "rawon")
-				win(id).terminal.rawmode = true;
+				window.terminals[id].rawmode = true;
 			if(p.data.substr(0, 6) == "rawoff")
-				win(id).terminal.rawmode = false;
+				window.terminals[id].rawmode = false;
 			respond(p, -1);
 		} catch(err) {
 			error9p(p.tag, err.message);
@@ -226,7 +237,7 @@ function newWindow(id, canclose) {
 	},
 	function(f) {
 		try {
-			win(id).terminal.rawmode = false;
+			window.terminals[i].rawmode = false;
 		} catch(err) {
 			error9p(p.tag, err.message);
 		}
@@ -239,7 +250,7 @@ function newWindow(id, canclose) {
 			var data = '';
 			p.count = 0;
 			if (p.offset == 0) {
-				data = fromutf8(win(id).titleBar.getElementsByClassName('name')[0].innerHTML);
+				data = win(id).titleBar.getElementsByClassName('name')[0].innerHTML;
 				p.count = data.length;
 			}
 			respond(p, data);
@@ -249,7 +260,7 @@ function newWindow(id, canclose) {
 	},
 	function(f, p) {
 		try {
-			win(id).titleBar.getElementsByClassName('name')[0].innerHTML = toutf8(p.data);
+			win(id).titleBar.getElementsByClassName('name')[0].innerHTML = fromutf8(p.data);
 			respond(p, -1);
 		} catch (err) {
 			error9p(p.tag, err.message);
@@ -260,11 +271,90 @@ function newWindow(id, canclose) {
 			var data = '';
 			p.count = 0;
 			if (p.offset == 0) {
-				data = fromutf8('' + id);
+				data = id;
 				p.count = data.length;
 			}
 			respond(p, data);
 		});
+	mkfile("/dev/hsys/" + id + "/text", function(f, p) {
+		try {
+			f.text = window.terminals[id].value.slice(0, window.terminals[id].value.length - 2);
+		} catch(err) {
+			return err.message;
+		}
+	}, function(f, p) {
+		try {
+			var data = f.text;
+			var runlen = f.text.length - p.offset;
+			if (p.count > runlen)
+				p.count = runlen;
+			data = data.slice(p.offset, p.count);
+			data = toutf8(data);
+			respond(p, data);
+		} catch(err) {
+			error9p(p.tag, err.message);
+		}
+	});
+	mkfile("/dev/hsys/" + id + "/innerHTML", function(f) {
+		try {
+			f.text = win(id).bg.innerHTML;
+			if (f.mode & 0x10)
+				f.text = "";
+		} catch(err) {
+			return err.message;
+		}
+	}, function(f, p) {
+		try {
+			var data = f.text;
+			var runlen = f.text.length - p.offset;
+			if (p.count > runlen) {
+				p.count = runlen;
+			}
+			data = data.slice(p.offset, p.count);
+			data = toutf8(data);
+			respond(p, data);
+		} catch(err) {
+			error9p(p.tag, err.message);
+		}
+	}, function(f, p) {
+		try {
+			var b = f.text.slice(0, p.offset);
+			var a = f.text.slice(p.offset, f.text.length - 1);
+			f.text = fromutf8(b + p.data + a);
+			respond(p, p.data.length);
+		} catch(err) {
+			error9p(p.tag, err.message);
+		}
+	}, function(f) {
+		try {
+			if (f.mode & 1) {
+				win(id).bg.innerHTML = f.text;
+			}
+			oshow(id, false);
+		} catch(err) {
+		}
+		});
+	} else {
+		div.terminal = window.terminals[id];
+		div.terminal.value = "";
+		div.terminal.consbuf = "";
+		div.terminal.backlog = "";
+		div.terminal.unread = "";
+		div.terminal.online = [];
+		div.terminal.onnote = [];
+		div.terminal.rawmode = false;
+		div.terminal.holdmode = false;
+	}
+	div.terminal.div = div;
+	div.terminal.style.display = 'block';
+	div.termhidden = false;
+
+	div.appendChild(div.terminal);
+	div.appendChild(div.bg);
+	div.appendChild(div.titleBar);
+	div.appendChild(div.bottom);
+
+	resizeCompute(div);
 
 	return div;
 }
@@ -302,7 +392,7 @@ function showWindow(id) {
 
 	div.style.height = div.oldheight;
 	if (div.termhidden == false)
-		div.terminal.style.display = 'block';
+		div.terminal.style.display='block';
 	div.resizeHandle.style.display = 'block';
 	div.bg.style.display = 'block';
 	div.bottom.style.display = 'block';
