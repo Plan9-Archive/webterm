@@ -108,6 +108,26 @@ function dragStart(id, x, y) {
 		raiseWindow(id);
 }
 
+function resizeStart(id, x, y) {
+	window.resizing = win(id);
+	window.resizing.x = x;
+	window.resizing.y = y;
+
+	var rdiv = document.createElement('div');
+	window.resizing.resizeDiv = rdiv;
+
+	rdiv.div = window.resizing;
+	rdiv.setAttribute('class', 'resizeBox');
+	rdiv.style.zIndex = rdiv.div.style.zIndex + 1;
+	rdiv.style.position = 'absolute';
+	rdiv.style.width = window.resizing.style.width;
+	rdiv.style.height = window.resizing.style.height;
+	rdiv.style.top = window.resizing.style.top;
+	rdiv.style.left = window.resizing.style.left;
+
+	document.body.appendChild(rdiv);
+}
+
 function newWindow(id, canclose) {
 	var div = document.createElement('div');
 	window.windows.push(div);
@@ -145,6 +165,10 @@ function newWindow(id, canclose) {
 	}
 
 	div.onmousedown = function(event) {
+		raiseWindow(id);
+	}
+
+	div.ontouchstart = function(event) {
 		raiseWindow(id);
 	}
 
@@ -192,23 +216,13 @@ function newWindow(id, canclose) {
 	div.resizeHandle.div = div;
 	div.resizeHandle.setAttribute('class', 'resizer');
 	div.resizeHandle.onmousedown = function(event) {
-		window.resizing = this.div;
-		window.resizing.x = event.screenX;
-		window.resizing.y = event.screenY;
+		resizeStart(id, event.screenX, event.screenY);
 
-		var rdiv = document.createElement('div');
-		window.resizing.resizeDiv = rdiv;
-
-		rdiv.div = this.div;
-		rdiv.setAttribute('class', 'resizeBox');
-		rdiv.style.zIndex = rdiv.div.style.zIndex + 1;
-		rdiv.style.position = 'absolute';
-		rdiv.style.width = window.resizing.style.width;
-		rdiv.style.height = window.resizing.style.height;
-		rdiv.style.top = window.resizing.style.top;
-		rdiv.style.left = window.resizing.style.left;
-
-		document.body.appendChild(rdiv);
+		event.preventDefault();
+		return false;
+	}
+	div.resizeHandle.ontouchstart = function(event) {
+		resizeStart(id, event.touches[0].screenX, event.touches[0].screenY);
 
 		event.preventDefault();
 		return false;
