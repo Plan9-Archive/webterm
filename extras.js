@@ -1,12 +1,3 @@
-function oset(id, trans) {
-	win(id).terminal.style.opacity = trans;
-}
-
-function oshow(id, boo) {
-	win(id).termhidden = !boo;
-	win(id).terminal.style.display = boo? 'block': 'none';
-}
-
 function youtube(id, url) {
 	var re = /watch\?v=/;
 	url = url.replace(re, 'embed/');

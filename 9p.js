@@ -132,6 +132,7 @@ function Topen(p) {
 	if(fids[p.fid] == undefined)
 		return error9p(p.tag, "no such fid");
 	f = fids[p.fid].f;
+	fids[p.fid].mode = p.mode;
 	if(f.open != undefined){
 		s = f.open(fids[p.fid]);
 		if(s != undefined && s != "")

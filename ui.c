@@ -55,7 +55,7 @@ threadmain(int argc, char **argv) {
 	winid[r] = '\0';
 	close(fd);
 	snprint(buf, 255, "/dev/hsys/%s", winid);
-	bind(buf, "/dev", MBEFORE);
+	bind(buf, "/dev", MBEFORE|MCREATE);
 	close(0);
 	if(open("/dev/cons", OREAD) < 0){
 		fprint(2, "can't open /dev/cons: %r\n");

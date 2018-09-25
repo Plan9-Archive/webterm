@@ -10,10 +10,11 @@ function newTerminal() {
 	var ta = document.createElement('textarea');
 
 	ta.setAttribute('class', 'terminal');
-	ta.setAttribute('readonly', 'readonly');
+	ta.setAttribute('spellcheck', 'false');
+	//ta.setAttribute('readonly', 'readonly');
 	ta.style.width='100%';
 	ta.style.height='100%';
-	ta.onkeypress=function(event) {this.addchar(event.which);};
+	ta.onkeypress=function(event) {this.addchar(event.which); event.preventDefault(); return false; };
 	ta.onkeydown=function(event) {
 		if(event.which == 46){
 			this.addchar(127);
@@ -32,6 +33,13 @@ function newTerminal() {
 			this.addchar(s.charCodeAt(i));
 		return false;
 	}
+	ta.oninput = function(event) {
+		var s = event.data;
+		for (var i = 0; i < s.length; i++)
+			this.addchar(s.charCodeAt(i));
+		return false;
+	}
+
 
 	ta.consbuf = "";
 	ta.unread = "";

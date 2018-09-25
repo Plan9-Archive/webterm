@@ -1,11 +1,5 @@
 #!/bin/rc
 
 url=$"*;
-id=`"{ cat /dev/winid }
 label browser
-{
-echo 'var f=c("iframe");f.src="'^$url^'";f.style.width="100%";f.style.height="100%";var i=c("input");i.style.width="100%";i.value="http://"';
-echo 'i.onkeypress=function(event){if(event.keyCode==13){ f.src=i.value;i.value="http://"; }};'
-echo 'win('^$id^').bg.appendChild(i);win('^$id^').bg.appendChild(f);'
-echo 'oshow('^$id^', false);'
-} >> /dev/js
+echo '<input type="text" value="http://" style="width:100%;" onkeypress="if(event.keyCode==13){ this.parentNode.getElementsByTagName(''iframe'')[0].src = this.value; this.value = ''http://''; };"/><iframe src="'^$url^'" style="width:100%;height:100%;"></iframe>' > /dev/innerHTML
